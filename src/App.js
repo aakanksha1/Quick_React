@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import 'rbx/index.css';
 import {Button, Container, Title} from 'rbx';
 
@@ -54,12 +54,29 @@ const CourseList = ({ courses }) => (
   </div>
 );
 
-const App = () =>  (
-  <Container>
-    <Banner title = { schedule.title } />
-    <CourseList courses = {schedule.courses} />
-  </Container>
-);
+const App = () => {
+  const [schedule, setSchedule] = React.useState({ title: '', courses: [] });
+  const url = 'https://courses.cs.northwestern.edu/394/data/cs-courses.php';
+
+  React.useEffect(() => {
+    
+    const fetchSchedule = async () => {
+      const response = await fetch(url);
+      if (!response.ok) throw response;
+      const json = await response.json();
+      setSchedule(json);
+    }
+    
+    fetchSchedule();
+  }, []);
+
+  return (
+    <div className="container">
+      <Banner title={ schedule.title } />
+      <CourseList courses={ schedule.courses } />
+    </div>
+  );
+};
 
 export default App;
 
