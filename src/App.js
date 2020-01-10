@@ -1,10 +1,12 @@
 import React, {useState, useEffect} from 'react';
 import 'rbx/index.css';
-import {Button, Container, Title} from 'rbx';
+import {Button, Container, Title, Message} from 'rbx';
 
 //database imports
 import firebase from 'firebase/app';
 import 'firebase/database';
+import 'firebase/auth';
+import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
 
 const schedule = {
   "title": "CS Courses for 2018-2019",
@@ -39,7 +41,18 @@ const firebaseConfig = {
   projectId: "course-scheduler-13dfd",
   storageBucket: "course-scheduler-13dfd.appspot.com",
   messagingSenderId: "40653346747",
-  appId: "1:40653346747:web:c30c5b18975aac6009169e"
+  appId: "1:40653346747:web:c30c5b18975aac6009169e",
+
+};
+
+const uiConfig = {
+  signInFlow: 'popup',
+  signInOptions: [
+    firebase.auth.GoogleAuthProvider.PROVIDER_ID
+  ],
+  callbacks: {
+    signInSuccessWithAuthResult: () => false
+  }
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -74,9 +87,9 @@ const hasConflict = (course, selected) => (
   selected.some(selection => courseConflict(course, selection))
 );
 
-const Banner = ({ title }) => (
-  <h1 className="title">{ title }</h1>
-);
+// const Banner = ({ title }) => (
+//   <h1 className="title">{ title }</h1>
+// );
 
 const getCourseTerm = course => (
   terms[course.id.charAt(0)]
@@ -174,8 +187,34 @@ const addScheduleTimes = schedule => ({
   courses: Object.values(schedule.courses).map(addCourseTimes)
 });
 
+const Banner = ({user, title}) => (
+  <React.Fragment>
+    {user ? <Welcome user={user} /> : <SignIn />}
+    <Title>{ title || '[loading...]'}</Title>
+  </React.Fragment>
+);
+
+const SignIn = () => (
+  <StyledFirebaseAuth
+    uiConfig={uiConfig}
+    firebaseAuth={firebase.auth()}
+  />
+);
+
+const Welcome=({user}) => (
+  <Message color="info">
+    <Message.Header>
+      Welcome, {user.displayName}
+      <Button primary onClick={()=> firebase.auth().signOut()}>
+        Log out
+      </Button>
+    </Message.Header>
+  </Message>
+);
+
 const App = () => {
   const [schedule, setSchedule] = React.useState({ title: '', courses: [] });
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const handleData = snap => {
@@ -185,10 +224,14 @@ const App = () => {
     return () => {db.off('value', handleData);};
   },[]);
 
+  useEffect(()=>{
+    firebase.auth().onAuthStateChanged(setUser);
+  }, []);
+
   return (
     <div className="container">
-      <Banner title={ schedule.title } />
-      <CourseList courses={ schedule.courses } />
+      <Banner title={ schedule.title } user={user}/>
+      <CourseList courses={ schedule.courses } user={user} />
     </div>
   );
 };
