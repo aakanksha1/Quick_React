@@ -29,6 +29,7 @@ const TermSelector = ({state}) => (
     { Object.values(terms)
         .map(value => 
           <Button key={value}
+                  data-cy={value}
                   color={buttonColor(value === state.term)}
                   onClick={() => state.setTerm(value)}
           >
